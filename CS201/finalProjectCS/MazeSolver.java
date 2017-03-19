@@ -1,0 +1,203 @@
+import java.util.LinkedList;
+import java.util.ArrayList;
+
+/**
+ * Implement the algorithm to solve the maze
+ * as described in the handout
+ * This is an abstract class because we will use 
+ * both MazeSolverStack and recursion to solve the maze
+ * @author Luong Nguyen
+ * @date 4/20/11
+ */
+
+public abstract class MazeSolver implements Runnable {
+	// MazeSolve has a Maze as class member
+	protected Maze maze;
+	/**
+	 *  a worklist is a set of squares which are reachable but
+	 *  haven't been checked if they have any reachable neighbors
+	 */
+	protected LinkedList<Square> worklist;
+	/**
+	 * isAnimated signals if the main loop in the solve() will be executed
+	 */
+	boolean isAnimated;
+	
+	/**
+	 * Constructor @param the Maze to be solved
+	 * stored in maze var
+	 */
+	public MazeSolver(Maze m)
+	{
+		maze = m;
+		makeEmpty();
+		//isAnimated = false;
+	}
+	
+	/**
+	 * getter for isAnimated
+	 */
+	public boolean getAnimated()
+	{
+		return isAnimated;
+	}
+	
+	/**
+	 * setter for isAnimated
+	 */
+	public void setAnimated(boolean b)
+	{
+		isAnimated = b;
+	}
+	
+	/**
+	 * makeEmpty()
+	 * create an empty worklist
+	 */
+	public void makeEmpty()
+	{
+		//System.out.println("I am now in the makeEmpty method of the MazeSolver");
+		worklist = new LinkedList<Square>();
+		//System.out.println("Is this worklist empty? "+isEmpty());
+	}
+	
+	/**
+	 * isEmpty()
+	 * @return true if the worklist is empty
+	 */
+	public boolean isEmpty()
+	{
+		// check if the head is null
+		//return (worklist.element() == null);//worklist.isEmpty();
+		return worklist.isEmpty();
+	}
+	
+	/**
+	 * solve() @return true if a path is found
+	 */
+	public boolean solve()
+	{
+		// start square
+		Square startSq = maze.getStart();
+		// end square
+		Square endSq = maze.getEnd();
+		//System.out.println("I just assigned a value to the endSq");
+		// add the start square to the worklist
+		add(startSq);
+		//startSq.setOnlist(true);
+		// change the discover status to be true
+		startSq.setDis(true);
+		// check if the worklist is empty.
+		// and isAnimated is true
+		//System.out.println("In maze solver " + isAnimated);
+		while(!isEmpty())//&& isAnimated)
+		// if the list is not empty
+		{
+			// make the solver to go to sleep for 500ms
+			try{
+				Thread.sleep(500);
+				
+			}
+			catch (Exception e)
+			{
+				System.out.println(e);
+			}
+			if(isAnimated)
+			    {
+			// get a square from the worklist
+			// use the abstract method remove
+			Square currentSq = remove();
+			currentSq.setOnlist(false);
+			// if the square is the finish square
+			// then finish is reachable, terminate the algorithm
+			if(currentSq.equals(endSq)) 
+				{
+				//System.out.println("Yay, I found it. ");
+				return true;
+				}
+			// identify the neighbors of this square
+			ArrayList<Square> neighbor = maze.getNeighbors(currentSq);
+			//System.out.println("The current square is " + currentSq.getX() + " "+ currentSq.getY()+ 
+					//" and its neighbor is:\n" + neighbor.toString());
+			// walk through the list
+			for (int i =0; i< neighbor.size(); i++)
+			{
+				// store the current neighbor considered in the loop
+				Square currentN = neighbor.get(i);
+				// if the neighbor are not walls
+				// not previously explored
+				if((currentN.getType()!=1) && (!currentN.getDis())&& (!currentN.getOnlist()))
+				{
+					// add it to the worklist
+					// have to modify after writing stack/recursion
+					// result to using the abstract method
+					//System.out.println("Found a undiscovered neighbor " + currentN.getX()+ " "+ currentN.getY());
+					add(currentN);
+					currentN.setOnlist(true);
+					// change the status of current neighbor to explored
+					currentN.setDis(true);
+					// change the previous of currentN to current square
+					currentN.setPrev(currentSq);
+				}
+			}
+			// repaint the maze
+			maze.repaint();
+		}
+		}
+		// if the worklist is empty and execution escape the while loop
+		// then no solution is found
+		// return the false
+		return false;
+		
+	}
+	 
+	/**
+	 * abstract add
+	 * @param Square sq
+	 * add the sq to the worklist
+	 */
+	public abstract void add(Square sq);
+	
+	/**
+	 * abstract method remove()
+	 * @return a square
+	 * remove and return a square from the worklist
+	 */
+	public abstract Square remove();
+	
+	/**
+	 * retracePath
+	 * @param Square sq
+	 * print out the path found from the start to the Square sq
+	 * use a stack to store the squares encountered as following the path backward
+	 * pop the square from the stack to print in forward direction
+	 */
+	public abstract String retracePath(Square sq);
+	
+	/**
+	 * abstract getLength
+	 * @return length of the path found
+	 */
+	public abstract int getLength();
+	
+	/**
+	 * void run is executed when it is started in a Thread
+	 * it calls the solve method then maze.repaint() is call
+	 */
+	public void run()
+	{
+		// check if the maze is solvable
+		boolean solvable = solve();
+		// if the maze can be solved, call the retracePath
+		if(solvable)
+			{
+			// if the maze can be solved, call the retracePath
+			retracePath(maze.getEnd());
+			// repaint the maze
+			maze.repaint();
+			}
+		else {
+		    JOptionPane.showMessageDialog(null, "There is no path found","There is no path found", JOptionPane.ERROR_MESSAGE);
+		}
+	}
+}
